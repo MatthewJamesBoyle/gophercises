@@ -39,7 +39,8 @@ func main() {
 		go func() {
 			var answer string
 			fmt.Scanf("%s\n", &answer)
-			answerCh <- answer
+			trimmed := strings.ToLower(strings.TrimSpace(answer))
+			answerCh <- trimmed
 		}()
 
 		select {
@@ -52,6 +53,8 @@ func main() {
 			}
 		}
 	}
+	fmt.Printf("Congratulations, you got through every question in the quiz! You scored %d out of %d.\n", correct, len(problems))
+
 }
 
 func parseLines(lines [][]string) []problem {
