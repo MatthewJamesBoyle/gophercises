@@ -29,13 +29,35 @@ var defaultStoryTmpl = `
 </html>
 `
 
-func NewHandler(s Story) http.Handler {
-	return handler{s}
+var tpl *template.Template
+
+
+func init() {
+	tpl = template.Must(template.New("").Parse(defaultStoryTmpl))
+}
+
+
+type HandlerOption func (h *handler)
+
+func WithTemplate(t *template.Template) HandlerOption {
+	return func(h *handler) {
+		h.t = t
+	}
+}
+
+func NewHandler(s Story, t *template.Template, opts ... HandlerOption) http.Handler {
+	h := handler{s, tpl}
+	for _, opt := range opts {
+		opt(&h)
+	}
+
+	return h
 
 }
 
 type handler struct {
 	s Story
+	t *template.Template
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -47,8 +69,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = path[1:]
 
 	if chapter, ok := h.s[path]; ok {
-		tpl := template.Must(template.New("").Parse(defaultStoryTmpl))
-		err := tpl.Execute(w, chapter)
+		err := h.t.Execute(w, chapter)
 		if err != nil {
 			log.Printf("%v", err)
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
